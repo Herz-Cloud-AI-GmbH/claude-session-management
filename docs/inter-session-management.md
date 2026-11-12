@@ -13,18 +13,22 @@ Three roles, each with a fixed model and effort: a Design session works a topic 
 ## How they work together
 
 ```mermaid
-%%{init: {"theme": "base", "themeVariables": {"lineColor": "#8a8a8a", "primaryBorderColor": "#8a8a8a"}, "flowchart": {"wrappingWidth": 400}}}%%
 flowchart TB
-  User["User<br/>decides, answers questions"]
-  Design["Design session<br/>Opus · xhigh"]
-  Lead["Lead session<br/>Sonnet · xhigh"]
-  Sub["Subagents<br/>Haiku · max"]
-  Host[("Repo host<br/>issues · decisions · PRs")]
+  User("<b>User</b><br/>decides"):::user
+  Design("<b>Design session</b><br/>Opus · xhigh"):::design
+  Lead("<b>Lead session</b><br/>Sonnet · xhigh"):::lead
+  Sub("<b>Subagents</b><br/>Haiku · max"):::sub
+  Host[("<b>Repo host</b><br/>issues · PRs")]:::host
   User -- "topics" --> Design
   User -- "decisions" --> Lead
   Design -- "written design" --> Lead
   Lead <-->|"tasks and results"| Sub
   Lead -- "merges, logs decisions" --> Host
+  classDef user fill:#162033,stroke:#94a3b8,stroke-width:2px,color:#f8fafc
+  classDef design fill:#241a4a,stroke:#a78bfa,stroke-width:2px,color:#f8fafc
+  classDef lead fill:#0b2433,stroke:#22d3ee,stroke-width:2px,color:#f8fafc
+  classDef sub fill:#0c2b24,stroke:#34d399,stroke-width:2px,color:#f8fafc
+  classDef host fill:#2f230b,stroke:#fbbf24,stroke-width:2px,color:#f8fafc
 ```
 
 ## The rules
@@ -40,27 +44,23 @@ flowchart TB
 
 ## Why these models
 
-| Role | The work | The fit |
-|---|---|---|
-| Design | open-ended, few turns, the hardest thinking | the strongest model at high effort |
-| Lead | long-running, many turns, orchestration | a mid-size model; every turn is cheaper |
-| Subagents | many small bounded tasks | a fast model at maximum effort: small tasks done carefully |
+- **Design on Opus:** open-ended work with few turns and the hardest thinking. The strongest model at high effort.
+- **Lead on Sonnet:** long-running orchestration with many turns. A mid-size model keeps every turn cheaper.
+- **Subagents on Haiku:** many small, bounded tasks. A fast model at maximum effort does small tasks carefully.
 
 ## Enforce the design
 
-Five layers, from the files every role needs to the optional team-wide lock.
+Five layers, from the files every role needs to the optional team-wide lock:
 
-| # | Layer | Fixes | Basis |
-|---|---|---|---|
-| 1 | Role file with `model` | the session's model | tested |
-| 2 | Launch command with `--effort` | the session's effort | flag documented |
-| 3 | Subagent file with `model` and `effort` | the subagent's model and effort | model tested, effort documented |
-| 4 | Hook on subagent calls | which subagents run, no per-call overrides | tested |
-| 5 | Managed settings (Team plan) | the allowed models, the subagent model | documented |
+1. **Role file with `model`** fixes the session's model. *Tested.*
+2. **Launch command with `--effort`** fixes the session's effort. *Flag documented.*
+3. **Subagent file with `model` and `effort`** fixes the subagent. *Model tested, effort documented.*
+4. **Hook on subagent calls** restricts which subagents run and blocks per-call overrides. *Tested.*
+5. **Managed settings (Team plan)** set the allowed models and the subagent model. *Documented.*
 
 ### 1. Role files
 
-One file per role in `.claude/agents/`. The role is the file; the model comes from its frontmatter.
+One file per role in [`.claude/agents/`](../.claude/agents): `design.md`, `lead.md` and `worker.md`. The role is the file; the model comes from its frontmatter. `lead.md`:
 
 ```markdown
 ---
@@ -73,7 +73,7 @@ You are the only session that merges to `main` and releases.
 Delegate coding to the `worker` subagent. Log decisions on the repo host.
 ```
 
-`design.md` is the same with `model: opus` and the Design instructions. The subagent gets `worker.md` with `model: haiku` and `effort: max`.
+`design.md` is the same with `model: opus` and the Design instructions.
 
 ### 2. Launch commands
 
@@ -85,6 +85,8 @@ alias claude-lead='claude --agent lead --effort xhigh'
 ```
 
 ### 3. Subagent file
+
+[`.claude/agents/worker.md`](../.claude/agents/worker.md):
 
 ```markdown
 ---
@@ -100,13 +102,15 @@ The `effort` setting key does not accept `max`, so the subagents' `max` comes fr
 
 ### 4. The hook
 
-The Lead could still call a general-purpose subagent, which inherits the Lead's model, or pass a model per call. A hook on the Agent tool closes both:
+The Lead could still call a general-purpose subagent, which inherits the Lead's model, or pass a model per call. A hook on the Agent tool closes both. It is registered in [`.claude/settings.json`](../.claude/settings.json):
 
 ```json
 { "hooks": { "PreToolUse": [ { "matcher": "Agent",
     "hooks": [ { "type": "command",
       "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/lock-agent.sh" } ] } ] } }
 ```
+
+and the script, [`.claude/hooks/lock-agent.sh`](../.claude/hooks/lock-agent.sh):
 
 ```bash
 #!/usr/bin/env bash
@@ -119,35 +123,30 @@ case "$type" in worker) ;; *) echo "Blocked: use the 'worker' subagent, not '$ty
 exit 0
 ```
 
-Exit code 2 blocks the call and shows the message to the model, which then retries correctly.
+The script needs `jq` on the `PATH`. Exit code 2 blocks the call and shows the message to the model, which then retries correctly.
 
 ### 5. Managed settings (optional)
 
 Organisation owners on the Team plan can push settings to all members from the Claude Code section of the organisation settings in claude.ai:
 
-| Setting | Effect |
-|---|---|
-| `availableModels` with `enforceAvailableModels` | only the listed models can run, subagents included |
-| `CLAUDE_CODE_SUBAGENT_MODEL` with `CLAUDE_CODE_SUBAGENT_MODEL_FORCE=1` | one model for all subagents, ignoring files and per-call values |
+- **`availableModels` with `enforceAvailableModels`:** only the listed models can run, subagents included.
+- **`CLAUDE_CODE_SUBAGENT_MODEL` with `CLAUDE_CODE_SUBAGENT_MODEL_FORCE=1`:** one model for all subagents, ignoring files and per-call values.
 
-### Limits
-
-| Limit | Consequence |
-|---|---|
-| Users can run `/model` and `/effort` inside a session | layers 1 and 2 fix the start, not the whole session |
-| `maxEffortLevel` is a ceiling with no floor, and it caps subagents too | do not set it below `max` while subagents run `max` |
-| `CLAUDE_CODE_EFFORT_LEVEL` forces one effort on everything | leave it unset |
+> [!WARNING]
+> Three limits to know:
+> - Users can run `/model` and `/effort` inside a session, so layers 1 and 2 fix the start, not the whole session.
+> - `maxEffortLevel` is a ceiling with no floor, and it caps subagents too. Do not set it below `max` while subagents run `max`.
+> - `CLAUDE_CODE_EFFORT_LEVEL` forces one effort on everything. Leave it unset.
 
 ## Verify
 
-| # | Step | Result |
-|---|---|---|
-| 1 | Start `claude-lead`, run `/model` | Sonnet |
-| 2 | Ask the Lead to call a general-purpose subagent | blocked, with the hook's message |
-| 3 | Ask it to call `worker` with `model: opus` | blocked |
-| 4 | Ask it to call `worker`, then run `jq -r 'select(.type=="assistant") \| .message.model' ~/.claude/projects/<project>/<session>/subagents/*.jsonl \| sort \| uniq -c` | the call works; every turn shows Haiku |
+1. **Start `claude-lead`** and run `/model`. Expect Sonnet.
+2. **Ask the Lead to call a general-purpose subagent.** The hook blocks it with its message.
+3. **Ask it to call `worker` with `model: opus`.** Blocked.
+4. **Ask it to call `worker`,** then run `jq -r 'select(.type=="assistant") | .message.model' ~/.claude/projects/<project>/<session>/subagents/*.jsonl | sort | uniq -c`. The call works and every turn shows Haiku.
 
-Tested with Claude Code 2.1.322 (November 2026): layers 1, 3 (model) and 4, by headless runs that read the model from the session and subagent transcripts. The effort level has no headless read-back; check it in the session.
+> [!NOTE]
+> Tested with Claude Code 2.1.322 (November 2026): layers 1, 3 (model) and 4, by headless runs that read the model from the session and subagent transcripts. The effort level has no headless read-back; check it in the session.
 
 ## Changelog
 

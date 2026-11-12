@@ -4,11 +4,9 @@ One session keeps working past its context limit and loses nothing it needs. Set
 
 ## The parts
 
-| Part | Where | Job |
-|---|---|---|
-| Window and trigger | `.claude/settings.json` → `env` | decide when compaction fires |
-| Pre-compaction hook | `.claude/settings.json` → `hooks.PreCompact` | hands the instruction file to Claude Code |
-| Instruction file | `.claude/compact-instructions.md` | names what the summary keeps in addition to its defaults |
+- **Window and trigger:** `env` in `.claude/settings.json` decides when compaction fires.
+- **Pre-compaction hook:** `hooks.PreCompact` in the same file hands the instruction file to Claude Code.
+- **Instruction file:** `.claude/compact-instructions.md` names what every summary keeps.
 
 ## The settings
 
@@ -32,62 +30,53 @@ The hook has no matcher, so it runs for automatic and manual (`/compact`) compac
 ## How a compaction runs
 
 ```mermaid
-%%{init: {"theme": "base", "themeVariables": {"lineColor": "#8a8a8a", "primaryBorderColor": "#8a8a8a"}}}%%
-sequenceDiagram
-  participant S as Session
-  participant K as Claude Code
-  participant H as Pre-compaction hook
-  participant M as Model
-  S->>S: work, context grows
-  Note over S,K: context reaches the trigger
-  K->>H: PreCompact
-  H-->>K: text of compact-instructions.md
-  K->>M: conversation + default summary prompt + instructions
-  M-->>K: summary: default sections + additions
-  K->>S: new context = standing instructions + summary
-  S->>S: continue, no human step
+flowchart LR
+  W("<b>1 · Work</b><br/>context grows"):::work
+  T("<b>2 · Trigger</b><br/>compaction starts"):::cc
+  H("<b>3 · Hook</b><br/>returns the file"):::hook
+  M("<b>4 · Model</b><br/>writes the summary"):::model
+  C("<b>5 · Continue</b><br/>instructions + summary"):::done
+  F["<b>Instruction file</b><br/>defaults + additions"]:::file
+  W --> T --> H --> M --> C
+  F -.-> H
+  classDef work fill:#162033,stroke:#94a3b8,stroke-width:2px,color:#f8fafc
+  classDef cc fill:#0b2433,stroke:#22d3ee,stroke-width:2px,color:#f8fafc
+  classDef hook fill:#2f230b,stroke:#fbbf24,stroke-width:2px,color:#f8fafc
+  classDef model fill:#241a4a,stroke:#a78bfa,stroke-width:2px,color:#f8fafc
+  classDef done fill:#0c2b24,stroke:#34d399,stroke-width:2px,color:#f8fafc
+  classDef file fill:#162033,stroke:#fbbf24,stroke-width:2px,stroke-dasharray:4 3,color:#f8fafc
 ```
 
 ## What the summary keeps
 
-| Kept by default | Added by the instruction file |
-|---|---|
-| Request and intent | Open questions to the user, each with options and a recommendation, marked "not decided" |
-| Technical concepts | Running work: each job, agent or run, with its ID and the exact command to check it |
-| Files and code | |
-| Errors and fixes | |
-| All user messages | |
-| Pending tasks, current work, next step | |
+The default summary already carries the request, the files, the errors, the user's messages, the pending work and the next step. The instruction file adds the two things an autonomous session needs to continue correctly:
 
-The default summary already carries the request, the files, the errors, the user's messages and the next step. The file adds the two things an autonomous session needs to continue correctly.
+- **Open questions to the user,** each with its options and a recommendation, marked "not decided".
+- **Running work:** each job, agent or run, with its ID and the exact command to check it.
 
 ## Tune it
 
-| Knob | Effect | Here |
+| Setting | Effect | Here |
 |---|---|---|
 | `CLAUDE_CODE_AUTO_COMPACT_WINDOW` | the window compaction is measured against (100k to 1M tokens) | 280000 |
 | `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE` | the share of the window that triggers it; it can only lower the threshold | 93 |
-| Instruction file | the additions to the summary; at most 10,000 characters | 2 items |
 
-Measured with these values: compaction fires at about 240k to 250k tokens. The summary needs room, so the trigger sits below window × percentage.
+> [!NOTE]
+> Measured with these values, compaction fires at about 240k to 250k tokens. The summary needs room, so the trigger sits below window × percentage.
 
 ## Where the settings live
 
-| File | Applies to |
-|---|---|
-| `.claude/settings.json` in the repo | everyone working in the repo |
-| `.claude/settings.local.json` | one person, this repo |
-| `~/.claude/settings.json` | one person, all projects |
-| any file, started with `claude --settings <file>` | the sessions started with that flag |
+- `.claude/settings.json` in the repo: everyone working in the repo.
+- `.claude/settings.local.json`: one person, this repo.
+- `~/.claude/settings.json`: one person, all projects.
+- Any file, started with `claude --settings <file>`: the sessions started with that flag.
 
 A change applies from the next session start.
 
 ## Verify
 
-| # | Step | Result |
-|---|---|---|
-| 1 | Start a new session in the repo and ask it to run `echo $CLAUDE_CODE_AUTO_COMPACT_WINDOW $CLAUDE_AUTOCOMPACT_PCT_OVERRIDE` | `280000 93` |
-| 2 | Run `/compact` | the summary contains the two added sections |
+1. **Start a new session** in the repo and ask it to run `echo $CLAUDE_CODE_AUTO_COMPACT_WINDOW $CLAUDE_AUTOCOMPACT_PCT_OVERRIDE`. Expect `280000 93`.
+2. **Run `/compact`.** The summary contains the two added sections.
 
 ## Why it works
 
