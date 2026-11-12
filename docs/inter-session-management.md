@@ -7,7 +7,7 @@ Three roles, each with a fixed model and effort: a Design session works a topic 
 | Role | Does | Model | Effort | How many |
 |---|---|---|---|---|
 | **Design** | works one topic out with the user and writes the design (doc or issue) | Opus | xhigh | one per topic |
-| **Lead** | turns the design into the product: delegates, reviews, merges, releases | Sonnet | xhigh | one per product |
+| **Lead** | turns the design into the product: delegates, reviews code quality and results against the goal, merges, releases | Sonnet | xhigh | one per product |
 | **Subagents** | each does one small, well-defined task and returns the result | Haiku | max | many, short-lived |
 
 ## How they work together
@@ -36,7 +36,7 @@ flowchart TB
 1. **One topic per session.** A session stays small and its summaries stay accurate.
 2. **One Lead per product.** Only the Lead merges to `main` and releases, so parallel sessions never compete for it.
 3. **Design hands over a written design,** never code in `main`.
-4. **Subagents return a result,** not a conversation. The Lead owns what gets merged.
+4. **Subagents return a result,** not a conversation, in the most minimal, clean code. The Lead reviews code quality and results against the goal and owns what gets merged.
 5. **Durable state lives on the repo host** (issues, decision log, PRs), not in a session. A new session starts from there.
 6. **Sessions message each other rarely:** for hand-overs, and for "`main` moved" or "release shipped".
 7. **A topic moves by hand-over file:** at most 30 lines with running work, open questions, next steps and open PRs. The file lives outside the repository, for example `~/.claude/projects/<project>/handoff/<topic>.md`. A new session told "continue from `<topic>`" reads it first.
@@ -71,6 +71,9 @@ effort: xhigh
 ---
 You are the only session that merges to `main` and releases.
 Delegate coding to the `worker` subagent. Log decisions on the repo host.
+You are responsible for reviewing the code quality and the results: check that
+what the workers deliver reaches the desired goal before you merge it.
+Make no mistakes.
 ```
 
 `design.md` is the same with `model: opus` and the Design instructions.
@@ -96,6 +99,9 @@ model: haiku
 effort: max
 ---
 Do exactly the task in the prompt. Return the result, not questions.
+**Minimal, clean code.** The most minimal, cleanest code, expressive, modular
+and clean in style and shape.
+Make no mistakes.
 ```
 
 The `effort` setting key does not accept `max`, so the subagents' `max` comes from this file.
@@ -152,4 +158,5 @@ Organisation owners on the Team plan can push settings to all members from the C
 
 | Version | Date | Changes |
 |---|---|---|
+| 1.1 | 2026-11-12 | Lead reviews code quality and results; workers write minimal, clean code; both make no mistakes |
 | 1.0 | 2026-11-12 | Roles with fixed models and effort, hand-over, five enforcement layers |
