@@ -3,7 +3,7 @@
 One session keeps working past its context limit and loses nothing it needs. Setup: one settings file and one instruction file, no scripts.
 
 > [!NOTE]
-> Install: copy [`intra-session/.claude/`](../intra-session/.claude) into your repo, or [`both/.claude/`](../both/.claude) to add the roles of [inter-session management](inter-session-management.md).
+> Install: copy [`intra-session-mgmt/.claude/`](../intra-session-mgmt/.claude) into your repo, or [`full-session-mgmt/.claude/`](../full-session-mgmt/.claude) to add the roles of [inter-session management](inter-session-management.md).
 
 ## The parts
 
@@ -93,5 +93,5 @@ A change applies from the next session start.
 
 | Version | Date | Changes |
 |---|---|---|
-| 1.1 | 2026-11-12 | Install folders `intra-session/` and `both/` |
+| 1.1 | 2026-11-12 | Install folders `intra-session-mgmt/` and `full-session-mgmt/` |
 | 1.0 | 2026-11-12 | Settings, pre-compaction hook and instruction file |

@@ -18,30 +18,30 @@ Long-running Claude Code sessions that keep their context, and a team of session
 
 ## Pick a folder
 
-- **[`intra-session/`](intra-session):** one session that lasts. The compaction window and trigger, and a hook that keeps open questions and running work in every summary.
-- **[`inter-session/`](inter-session):** a team of sessions. Role files for Design, Lead and the worker subagent, and a hook that locks subagent calls to the defined roles. Needs `jq`.
-- **[`both/`](both):** everything above in one folder.
+- **[`intra-session-mgmt/`](intra-session-mgmt):** one session that lasts. The compaction window and trigger, and a hook that keeps open questions and running work in every summary.
+- **[`inter-session-mgmt/`](inter-session-mgmt):** a team of sessions. Role files for Design, Lead and the worker subagent, and a hook that locks subagent calls to the defined roles. Needs `jq`.
+- **[`full-session-mgmt/`](full-session-mgmt):** everything above in one folder.
 
 Each folder holds a ready-to-copy `.claude/`:
 
 ```text
-intra-session/.claude/
+intra-session-mgmt/.claude/
 ├─ settings.json              compaction window and trigger, the pre-compaction hook
 └─ compact-instructions.md    what every summary keeps
-inter-session/.claude/
+inter-session-mgmt/.claude/
 ├─ settings.json              the subagent hook
 ├─ agents/                    design.md (Opus) · lead.md (Sonnet) · worker.md (Haiku)
 └─ hooks/lock-agent.sh        only the defined subagents, no per-call overrides
-both/.claude/                 both of the above, merged
+full-session-mgmt/.claude/    both of the above, merged
 ```
 
 ## Quick start
 
-1. **Download a folder's `.claude/` into your repo.** Run it in the repo root; use `both`, `intra-session` or `inter-session`:
+1. **Download a folder's `.claude/` into your repo.** Run it in the repo root. It takes `full-session-mgmt`; use `intra-session-mgmt` or `inter-session-mgmt` instead if you want only one part:
 
    ```bash
    curl -sL https://github.com/Herz-Cloud-AI-GmbH/claude-session-management/archive/refs/heads/main.tar.gz \
-     | tar -xz --strip-components=2 --wildcards '*/both/.claude'
+     | tar -xz --strip-components=2 --wildcards '*/full-session-mgmt/.claude'
    ```
 
 2. **Intra-session:** start a new session and run `/compact`. The summary contains the two added sections: open questions and running work.
@@ -66,4 +66,4 @@ Tested with Claude Code 2.1.322.
 
 - **[Intra-session management](docs/intra-session-management.md):** set up compaction and see how a summary is built.
 - **[Inter-session management](docs/inter-session-management.md):** the three roles, their models, and how to enforce them.
-- **[`scripts/check.sh`](scripts/check.sh):** for contributors, checks that `both/` stays equal to the other two folders.
+- **[`scripts/check.sh`](scripts/check.sh):** for contributors, checks that `full-session-mgmt/` stays equal to the other two folders.
