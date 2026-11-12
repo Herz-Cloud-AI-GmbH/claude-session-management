@@ -6,7 +6,7 @@
   </defs>
   <rect width="1200" height="640" rx="20" fill="#0b1020"/>
   <circle cx="64" cy="58" r="6" fill="#22d3ee"/>
-  <text x="84" y="65" font-size="26" font-weight="700" fill="#f8fafc">Agent session management</text>
+  <text x="84" y="65" font-size="26" font-weight="700" fill="#f8fafc">Claude session management</text>
   <text x="84" y="92" font-size="14" fill="#94a3b8">Context that lasts, and one model per role</text>
   <rect x="48" y="124" width="1104" height="224" rx="18" fill="#0f172a" stroke="#1e293b" stroke-width="1.5"/>
   <circle cx="82" cy="160" r="5" fill="#a78bfa"/>

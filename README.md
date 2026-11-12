@@ -1,4 +1,4 @@
-# Agent session reference
+# Claude session management
 
 Long-running Claude Code sessions that keep their context, and a team of sessions with a fixed model per role. Settings, three role files and two hooks. The subagent hook needs `jq`.
 
