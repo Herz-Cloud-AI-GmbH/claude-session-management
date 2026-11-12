@@ -2,6 +2,9 @@
 
 Three roles, each with a fixed model and effort: a Design session works a topic out, one Lead builds it, subagents do the small tasks. The setup enforces the roles; it does not rely on people remembering them.
 
+> [!NOTE]
+> Install: copy [`inter-session/.claude/`](../inter-session/.claude) into your repo, or [`both/.claude/`](../both/.claude) to add the compaction setup of [intra-session management](intra-session-management.md). The hook needs `jq`.
+
 ## The roles
 
 | Role | Does | Model | Effort | How many |
@@ -60,7 +63,7 @@ Five layers, from the files every role needs to the optional team-wide lock:
 
 ### 1. Role files
 
-One file per role in [`.claude/agents/`](../.claude/agents): `design.md`, `lead.md` and `worker.md`. The role is the file; the model comes from its frontmatter. `lead.md`:
+One file per role in [`.claude/agents/`](../inter-session/.claude/agents): `design.md`, `lead.md` and `worker.md`. The role is the file; the model comes from its frontmatter. `lead.md`:
 
 ```markdown
 ---
@@ -89,7 +92,7 @@ alias claude-lead='claude --agent lead --effort xhigh'
 
 ### 3. Subagent file
 
-[`.claude/agents/worker.md`](../.claude/agents/worker.md):
+[`.claude/agents/worker.md`](../inter-session/.claude/agents/worker.md):
 
 ```markdown
 ---
@@ -108,15 +111,15 @@ The `effort` setting key does not accept `max`, so the subagents' `max` comes fr
 
 ### 4. The hook
 
-The Lead could still call a general-purpose subagent, which inherits the Lead's model, or pass a model per call. A hook on the Agent tool closes both. It is registered in [`.claude/settings.json`](../.claude/settings.json):
+The Lead could still call a general-purpose subagent, which inherits the Lead's model, or pass a model per call. A hook on the Agent tool closes both. It is registered in [`.claude/settings.json`](../inter-session/.claude/settings.json):
 
 ```json
 { "hooks": { "PreToolUse": [ { "matcher": "Agent",
     "hooks": [ { "type": "command",
-      "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/lock-agent.sh" } ] } ] } }
+      "command": "bash \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/lock-agent.sh" } ] } ] } }
 ```
 
-and the script, [`.claude/hooks/lock-agent.sh`](../.claude/hooks/lock-agent.sh):
+and the script, [`.claude/hooks/lock-agent.sh`](../inter-session/.claude/hooks/lock-agent.sh):
 
 ```bash
 #!/usr/bin/env bash
@@ -158,5 +161,6 @@ Organisation owners on the Team plan can push settings to all members from the C
 
 | Version | Date | Changes |
 |---|---|---|
+| 1.2 | 2026-11-12 | Install folders `inter-session/` and `both/`; the hook runs through `bash` |
 | 1.1 | 2026-11-12 | Lead reviews code quality and results; workers write minimal, clean code; both make no mistakes |
 | 1.0 | 2026-11-12 | Roles with fixed models and effort, hand-over, five enforcement layers |
