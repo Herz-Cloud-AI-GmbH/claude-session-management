@@ -1,0 +1,18 @@
+{
+  "env": {
+    "CLAUDE_CODE_AUTO_COMPACT_WINDOW": "280000",
+    "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": "93"
+  },
+  "hooks": {
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cat \"$CLAUDE_PROJECT_DIR\"/.claude/compact-instructions.md"
+          }
+        ]
+      }
+    ]
+  }
+}

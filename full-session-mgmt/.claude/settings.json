@@ -20,7 +20,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/lock-agent.sh"
+            "command": "bash \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/lock-agent.sh"
           }
         ]
       }
