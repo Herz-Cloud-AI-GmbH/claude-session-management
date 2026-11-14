@@ -52,7 +52,7 @@ full-session-mgmt/.claude/    both of the above, merged
 
 ## What works
 
-Tested with Claude Code 2.1.322.
+Compaction tested with Claude Code 2.1.322; roles and hook with 2.1.325.
 
 | Part | Status |
 |---|---|
@@ -65,5 +65,5 @@ Tested with Claude Code 2.1.322.
 ## Where next
 
 - **[Intra-session management](docs/intra-session-management.md):** set up compaction and see how a summary is built.
-- **[Inter-session management](docs/inter-session-management.md):** the three roles, their models, and how to enforce them.
+- **[Inter-session management](docs/inter-session-management.md):** the three roles, why one Lead, the Anthropic guidance behind the role files, and how to enforce them.
 - **[`scripts/check.sh`](scripts/check.sh):** for contributors, checks that `full-session-mgmt/` stays equal to the other two folders.
