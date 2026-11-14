@@ -225,6 +225,7 @@ The role files follow Anthropic's prompting guidance. Read for this: the [prompt
 - **Run a check before reporting done.** "run a real check that exercises the change before reporting it done" ([Haiku 5.5][haiku], *Tell coding agents to verify their changes*). The page saw the gap at `low` and `medium` effort; the line stays at `max` because the Lead's review leans on honest reports.
 - **No extras.** "Don't add new features, docs, or refactors that weren't asked for" ([Haiku 5.5][haiku], *Prevent early stopping in long agent prompts*).
 - **Blockers named.** The report says what is missing instead of claiming done, the same rule as for the Lead.
+- **No task, no action.** A live test sent a worker only "go". It searched the machine for a task, then pushed a commit and opened a pull request. The file now says to stop when the prompt names no task, to change only what the task names, and that pushing, pull requests and merging belong to the Lead. The Opus 5 guide gives the same scope rule: "stop short of actions that are clearly beyond what was asked" ([Opus 5][opus5], *Task scope and over-verification*). In the repeat test the worker stopped after two turns and asked for the task.
 
 ### Not adopted
 
@@ -239,7 +240,7 @@ The role files follow Anthropic's prompting guidance. Read for this: the [prompt
 4. **Ask it to call `worker`,** then run `jq -r 'select(.type=="assistant") | .message.model' ~/.claude/projects/<project>/<session>/subagents/*.jsonl | sort | uniq -c`. The call works and every turn shows Haiku.
 
 > [!NOTE]
-> Tested with Claude Code 2.1.322 (November 2026): layers 1, 3 (model) and 4, by headless runs that read the model from the session and subagent transcripts. The effort level has no headless read-back; check it in the session.
+> Tested with Claude Code 2.1.325 (November 2026) on `inter-session-mgmt` and `full-session-mgmt`: layers 1, 3 (model) and 4, by headless runs in a credential-free sandbox that read the model from the session and subagent transcripts. The effort level has no headless read-back; check it in the session.
 
 ## Changelog
 

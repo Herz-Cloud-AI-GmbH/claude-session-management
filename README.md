@@ -52,7 +52,7 @@ full-session-mgmt/.claude/    both of the above, merged
 
 ## What works
 
-Tested with Claude Code 2.1.322.
+Compaction tested with Claude Code 2.1.322; roles and hook with 2.1.325.
 
 | Part | Status |
 |---|---|
