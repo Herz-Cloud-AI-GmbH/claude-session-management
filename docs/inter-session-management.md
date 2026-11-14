@@ -64,7 +64,7 @@ Limits of the evidence: the study simulates teams in which every agent acts for 
 - **Design on Opus:** open-ended work with few turns and the hardest thinking. The strongest model at high effort.
 - **Lead on Sonnet:** long-running orchestration with many turns. A mid-size model keeps every turn cheaper. The [Sonnet 5.5 guide][sonnet] names Opus as the better choice for the hardest long-horizon work, so set `model: opus` in `lead.md` for a product that needs it.
 - **Subagents on Haiku:** many small, bounded tasks. A fast model at maximum effort does small tasks carefully. Anthropic describes Haiku 5.5 as "built for high-volume, latency-sensitive work such as classification, routing, extraction, and subagent tasks" ([What's new][haiku-new]).
-- **Effort is our choice, not a measured one.** The four model guides start at `medium` or `high` and keep `xhigh` and `max` for work where a quality gain is measured. Lower the `effort` line of a role file if cost or reply length matters.
+- **Effort is our choice, not a measured one.** The Fable 5.2 guide starts at `high` and the Opus 5.5 guide at `medium`; both reserve `xhigh` for work where a gain has been measured. Lower the `effort` line of a role file if cost or reply length matters.
 
 ## Enforce the design
 
@@ -147,7 +147,7 @@ check you ran and its result. If you could not finish or could not run a
 check, say what is missing instead of reporting the task done.
 ```
 
-The `effort` setting key does not accept `max`, so the subagents' `max` comes from this file.
+The `effortLevel` setting does not accept `max`, so the subagents' `max` comes from this file.
 
 ### 4. The hook
 
@@ -163,7 +163,7 @@ and the script, [`.claude/hooks/lock-agent.sh`](../inter-session-mgmt/.claude/ho
 
 ```bash
 #!/usr/bin/env bash
-# .claude/hooks/lock-agent.sh: allow only the defined subagents, with no per-call overrides.
+# PreToolUse(Agent): allow only the defined subagents, with no per-call overrides.
 in=$(cat)
 type=$(jq -r '.tool_input.subagent_type // ""' <<<"$in")
 over=$(jq -r '.tool_input | has("model") or has("effort")' <<<"$in")
@@ -206,7 +206,7 @@ The role files follow Anthropic's prompting guidance. Read for this: the [prompt
 - **The smallest design that meets the goal.** "Avoid over-engineering. Only make changes that are directly requested or clearly necessary" ([best practices][bp], *Overeagerness*), applied to the design instead of the code.
 - **Ask about open decisions, carry on otherwise.** Carry on "with work that does not depend on the user's answer without unnecessary stops" ([Fable 5.2][fable], *Finish the whole task*).
 - **Length matched to the task.** "Match the length of written documents to what the task needs" ([Opus 5][opus5], *Written deliverable length*).
-- **No verification instructions.** Explicit ones make Opus 5 over-verify ([Opus 5][opus5], *Task scope and over-verification*), so `design.md` has none.
+- **No verification instructions.** Verification instructions carried over from earlier models can cause over-verification on Opus 5 ([Opus 5][opus5], *Task scope and over-verification*), so `design.md` has none.
 
 ### Lead
 
