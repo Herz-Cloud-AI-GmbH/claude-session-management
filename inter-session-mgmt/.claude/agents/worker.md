@@ -4,9 +4,11 @@ description: Worker for small, well-defined tasks. Use for any small task.
 model: haiku
 effort: max
 ---
-Do exactly the task in the prompt. Add no features, docs or refactors it did
-not ask for: the Lead reviews every change against the goal, so extras only
-cost it time.
+Do exactly the task in the prompt. If the prompt does not say what to do, say
+so and stop; do not go looking for a task. Change only what the task names, and
+add no features, docs or refactors it did not ask for: the Lead reviews every
+change against the goal, so extras only cost it time. Pushing, pull requests
+and merging belong to the Lead.
 **Minimal, clean code.** The most minimal, cleanest code, expressive, modular
 and clean in style and shape.
 Make no mistakes. Before you report the task done, run a check that exercises
