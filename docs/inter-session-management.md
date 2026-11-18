@@ -9,18 +9,18 @@ Three roles, each with a fixed model and effort: a Design session works a topic 
 
 | Role | Does | Model | Effort | How many |
 |---|---|---|---|---|
-| **Design** | works one topic out with the user and writes the design (doc or issue) | Opus | xhigh | one per topic |
-| **Lead** | turns the design into the product: delegates, reviews code quality and results against the goal, merges, releases | Sonnet | xhigh | one per product |
-| **Subagents** | each does one small, well-defined task and returns the result | Haiku | max | many, short-lived |
+| **Design** | works one topic out with the user and writes the design (doc or issue) | Opus | medium | one per topic |
+| **Lead** | turns the design into the product: delegates, reviews code quality and results against the goal, merges, releases | Sonnet | high | one per product |
+| **Subagents** | each does one small, well-defined task and returns the result | Haiku | xhigh | many, short-lived |
 
 ## How they work together
 
 ```mermaid
 flowchart TB
   User("<b>User</b><br/>decides"):::user
-  Design("<b>Design session</b><br/>Opus · xhigh"):::design
-  Lead("<b>Lead session</b><br/>Sonnet · xhigh"):::lead
-  Sub("<b>Subagents</b><br/>Haiku · max"):::sub
+  Design("<b>Design session</b><br/>Opus · medium"):::design
+  Lead("<b>Lead session</b><br/>Sonnet · high"):::lead
+  Sub("<b>Subagents</b><br/>Haiku · xhigh"):::sub
   Host[("<b>Repo host</b><br/>issues · PRs")]:::host
   User -- "topics" --> Design
   User -- "decisions" --> Lead
@@ -61,10 +61,10 @@ Limits of the evidence: the study simulates teams in which every agent acts for 
 
 ## Why these models
 
-- **Design on Opus:** open-ended work with few turns and the hardest thinking. The strongest model at high effort.
-- **Lead on Sonnet:** long-running orchestration with many turns. A mid-size model keeps every turn cheaper. The [Sonnet 5.5 guide][sonnet] names Opus as the better choice for the hardest long-horizon work, so set `model: opus` in `lead.md` for a product that needs it.
-- **Subagents on Haiku:** many small, bounded tasks. A fast model at maximum effort does small tasks carefully. Anthropic describes Haiku 5.5 as "built for high-volume, latency-sensitive work such as classification, routing, extraction, and subagent tasks" ([What's new][haiku-new]).
-- **Effort is our choice, not a measured one.** The guides for Fable 5.2, Opus 5.5, Sonnet 5.5 and Haiku 5.5 start at `medium` or `high` and keep `xhigh` and `max` for work where a quality gain is measured. Lower the `effort` line of a role file if cost or reply length matters.
+- **Design on Opus:** open-ended work with few turns and the hardest thinking. The strongest model, at `medium` effort: the [Opus 5.5 guide][opus55] starts there and says to "test several levels against your own evals".
+- **Lead on Sonnet:** long-running orchestration with many turns. A mid-size model keeps every turn cheaper, at `high` effort: the [Sonnet 5.5 guide][sonnet] starts agentic work at `medium` for well-specified tasks and moves to `high` for harder or longer ones. The guide names Opus as the better choice for the hardest long-horizon work, so set `model: opus` in `lead.md` for a product that needs it.
+- **Subagents on Haiku:** many small, bounded tasks. A fast model does small tasks carefully. Anthropic describes Haiku 5.5 as "built for high-volume, latency-sensitive work such as classification, routing, extraction, and subagent tasks" ([What's new][haiku-new]). The [Haiku 5.5 guide][haiku] starts at `medium` for most work and reserves `xhigh` for "where your evals show a quality gain". We run `xhigh` on the worker without such an eval, so measure it before keeping it.
+- **Effort starts where the guides start.** Haiku 5.5: "Start with `medium` for most work, including agentic coding." `xhigh` is for work "where your evals show a quality gain". Sonnet 5.5: "Start with `high` unless your workload is agentic or latency-sensitive"; for agentic coding it says to "start with `medium` for well-specified tasks and move to `high` for harder or longer ones". Opus 5.5: "Start at `medium`", then "test several levels against your own evals". We have no evals yet, so these are starting points, not measured optima. Lower a role's `effort` line if cost or reply length matters, and raise one only after a sweep on your own tasks.
 
 ## Enforce the design
 
@@ -85,7 +85,7 @@ One file per role in [`.claude/agents/`](../inter-session-mgmt/.claude/agents): 
 name: lead
 description: Lead role
 model: sonnet
-effort: xhigh
+effort: high
 ---
 You are the only session that merges to `main` and releases, so parallel
 sessions never compete for it. You are responsible for reviewing the code
@@ -118,8 +118,8 @@ tag.
 Start each role by its command, so the model and effort cannot depend on who starts it:
 
 ```bash
-alias claude-design='claude --agent design --effort xhigh'
-alias claude-lead='claude --agent lead --effort xhigh'
+alias claude-design='claude --agent design --effort medium'
+alias claude-lead='claude --agent lead --effort high'
 ```
 
 ### 3. Subagent file
@@ -131,7 +131,7 @@ alias claude-lead='claude --agent lead --effort xhigh'
 name: worker
 description: Worker for small, well-defined tasks. Use for any small task.
 model: haiku
-effort: max
+effort: xhigh
 ---
 Do exactly the task in the prompt. If the prompt does not say what to do, say
 so and stop; do not go looking for a task. Change only what the task names, and
@@ -149,7 +149,7 @@ check you ran and its result. If you could not finish or could not run a
 check, say what is missing instead of reporting the task done.
 ```
 
-The `effortLevel` setting does not accept `max`, so the subagents' `max` comes from this file.
+A subagent's `effort` overrides the session's level, but not the `CLAUDE_CODE_EFFORT_LEVEL` environment variable, so the worker keeps `xhigh` while the Lead runs at `high`.
 
 ### 4. The hook
 
@@ -186,7 +186,7 @@ Organisation owners on the Team plan can push settings to all members from the C
 > [!WARNING]
 > Three limits to know:
 > - Users can run `/model` and `/effort` inside a session, so layers 1 and 2 fix the start, not the whole session.
-> - `maxEffortLevel` is a ceiling with no floor, and it caps subagents too. Do not set it below `max` while subagents run `max`.
+> - `maxEffortLevel` caps the effort a session can use. Any level above the cap runs at the cap instead, including a subagent's `effort` frontmatter. Do not set it below `xhigh`, or the worker drops to the cap.
 > - `CLAUDE_CODE_EFFORT_LEVEL` forces one effort on everything. Leave it unset.
 
 ## What went into the role files
@@ -214,7 +214,7 @@ The role files follow Anthropic's prompting guidance. Read for this: the [prompt
 
 - **A worker's reply is a report, not proof.** "Treat a text-only end of turn as a report rather than as proof the task is done" ([Opus 5.5][opus55], *Unattended agentic runs*). Fable 5.2 adds to review the reported diff as well as the summary ([Fable 5.2][fable], *Say who owns the code*).
 - **A check that exercises the change.** "A syntax-only check, or a check command that failed to start, does not count"; if no check can run, say which one and why ([Sonnet 5.5][sonnet], *Verification on coding tasks*).
-- **The Lead reviews, in one pass.** The guide says "do not use subagents to verify or double-check your own work" ([Opus 5][opus5], *Controlling subagent spawning*), and at `xhigh` Sonnet 5.5 can start review rounds on its own ([Sonnet 5.5][sonnet], *Thoroughness at xhigh and max effort*). The hook already allows only `worker`.
+- **The Lead reviews, in one pass.** The guide says "do not use subagents to verify or double-check your own work" ([Opus 5][opus5], *Controlling subagent spawning*). At `xhigh` and `max`, Sonnet 5.5 "can start its own rounds of review and verification" ([Sonnet 5.5][sonnet], *Thoroughness at xhigh and max effort*), so the Lead runs at `high`. The hook already allows only `worker`.
 - **Nothing unasked.** "Don't add features, tests, files, docs, or refactors that weren't asked for" ([Sonnet 5.5][sonnet], *Unrequested additions when coding*). Our file names features, docs and refactors, so a change can still carry the checks it needs.
 - **Carry on, stop only when needed.** "Keep working until everything the user asked for is done, and only stop to ask when you can't go on without the user or before a risky step" ([Sonnet 5.5][sonnet], *Carrying work through*). The page keeps the rules for irreversible actions with the prompt, so the file names force-pushes and deleting branches or tags.
 - **The brief.** Fable 5.2 says to tell the model how to brief a subagent ([Fable 5.2][fable], *Set expectations for subagents*) but not what a brief holds. The list in `lead.md` is ours.
@@ -222,7 +222,7 @@ The role files follow Anthropic's prompting guidance. Read for this: the [prompt
 
 ### Worker
 
-- **Run a check before reporting done.** "run a real check that exercises the change before reporting it done" ([Haiku 5.5][haiku], *Tell coding agents to verify their changes*). The page saw the gap at `low` and `medium` effort; the line stays at `max` because the Lead's review leans on honest reports.
+- **Run a check before reporting done.** "run a real check that exercises the change before reporting it done" ([Haiku 5.5][haiku], *Tell coding agents to verify their changes*). The guide saw the gap "at low and medium effort"; the worker runs at `xhigh`, because the Lead's review leans on honest reports.
 - **No extras.** "Don't add new features, docs, or refactors that weren't asked for" ([Haiku 5.5][haiku], *Prevent early stopping in long agent prompts*).
 - **Blockers named.** The report says what is missing instead of claiming done, the same rule as for the Lead.
 - **No task, no action.** A live test sent a worker only "go". It searched the machine for a task, then pushed a commit and opened a pull request. The file now says to stop when the prompt names no task, to change only what the task names, and that pushing, pull requests and merging belong to the Lead. The Opus 5 guide gives the same scope rule: "stop short of actions that are clearly beyond what was asked" ([Opus 5][opus5], *Task scope and over-verification*). In the repeat test the worker stopped after two turns and asked for the task.
@@ -230,7 +230,7 @@ The role files follow Anthropic's prompting guidance. Read for this: the [prompt
 ### Not adopted
 
 - **The ownership sentence** ("You are the owner and long-term maintainer of this codebase ...", [Fable 5.2][fable], *Say who owns the code*). It made the model consolidate duplicated code far more often, but output tokens rose by 70 to 80 percent and it made changes nobody asked for. That works against minimal code.
-- **The early-stopping line for the worker.** The [Haiku 5.5 guide][haiku] ties it to `low` effort in long agent prompts; the worker runs `max` on one small task.
+- **The early-stopping line for the worker.** The [Haiku 5.5 guide][haiku] ties it to `low` effort in long agent prompts; the worker runs `xhigh` on one small task.
 
 ## Verify
 
@@ -240,12 +240,13 @@ The role files follow Anthropic's prompting guidance. Read for this: the [prompt
 4. **Ask it to call `worker`,** then run `jq -r 'select(.type=="assistant") | .message.model' ~/.claude/projects/<project>/<session>/subagents/*.jsonl | sort | uniq -c`. The call works and every turn shows Haiku.
 
 > [!NOTE]
-> Tested with Claude Code 2.1.325 (November 2026) on `inter-session-mgmt` and `full-session-mgmt`: layers 1, 3 (model) and 4, by headless runs in a credential-free sandbox that read the model from the session and subagent transcripts. The effort level has no headless read-back; check it in the session.
+> Tested with Claude Code 2.1.325 (November 2026) on `inter-session-mgmt` and `full-session-mgmt`: layers 1, 3 (model) and 4, by headless runs in a credential-free sandbox that read the model from the session and subagent transcripts. The effort level has no headless read-back; check it in the session. The effort lines of version 1.4 come from the guides and the settings reference and were not run live.
 
 ## Changelog
 
 | Version | Date | Changes |
 |---|---|---|
+| 1.4 | 2026-11-18 | Effort starts where the guides start: Design `medium`, Lead `high`, worker `xhigh`. Subagent override and `maxEffortLevel` cap checked against the docs |
 | 1.3 | 2026-11-14 | Role files rewritten from Anthropic's prompting guides: reasons with the rules, real checks, briefs and reports for readers without context, the Lead reads pending messages before merging. New sections on why one Lead and on what went into the role files |
 | 1.2 | 2026-11-12 | Install folders `inter-session-mgmt/` and `full-session-mgmt/`; the hook runs through `bash` |
 | 1.1 | 2026-11-12 | Lead reviews code quality and results; workers write minimal, clean code; both make no mistakes |

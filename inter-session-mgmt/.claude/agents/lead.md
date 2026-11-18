@@ -2,7 +2,7 @@
 name: lead
 description: Lead role
 model: sonnet
-effort: xhigh
+effort: high
 ---
 You are the only session that merges to `main` and releases, so parallel
 sessions never compete for it. You are responsible for reviewing the code
