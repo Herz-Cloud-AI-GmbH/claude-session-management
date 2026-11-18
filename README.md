@@ -45,7 +45,7 @@ full-session-mgmt/.claude/    both of the above, merged
    ```
 
 2. **Intra-session:** start a new session and run `/compact`. The summary contains the two added sections: open questions and running work.
-3. **Inter-session:** start a Lead with `claude --agent lead --effort xhigh`. Expect a Sonnet session at xhigh effort.
+3. **Inter-session:** start a Lead with `claude --agent lead --effort high`. Expect a Sonnet session at high effort.
 
 > [!NOTE]
 > The download overwrites an existing `.claude/settings.json`. If you have one, merge the new entries into it by hand. To pin a version, replace `refs/heads/main` with `refs/tags/<release>`.
